@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>UB Programmers Team Project</title>
+</head>
+<body>
+    <div class="homepage">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <script>
+            window.addEventListener('DOMContentLoaded', (event) => {
+                // Hide flash messages after 5 seconds
+                setTimeout(() => {
+                    const flashMessages = document.querySelectorAll('.flash-message');
+                    flashMessages.forEach(fm => fm.style.display = 'none');
+                }, 5000);  // 5000 milliseconds = 5 seconds
+            });
+        </script>
+
+        <h1>Welcome to UB Programmers Project</h1>
+        <div class="btn-group">
+            <button onclick="window.location.href='/login'">Login</button>
+            <button onclick="window.location.href='/register'">Register</button>
+        </div>
+    </div>
+
+    <script src="static/functions.js"></script>
+</body>
+</html>

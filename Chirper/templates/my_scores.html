@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>My Scores</title>
+</head>
+
+<body>
+    <h1>My Scores</h1>
+    <button onclick="home()">Back to home</button>
+    <p>Total grades for questions you attempted: {{ corrects }}/{{ attempts }}</p>
+    <ul>
+        {% for grade in grades_list %}
+        <li>
+            <strong>Title:</strong> {{ grade['title'] }}<br>
+            <strong>Description:</strong> {{ grade['description'] }}<br>
+            <strong>User Answer:</strong> {{ grade['user_answer'] }}<br>
+            <strong>Expected Answer:</strong> {{ grade['expected_answer'] }}<br>
+            <strong>Score:</strong> {{ grade['score'] }}/1<br>
+            <hr>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        function home() {
+            window.location.href = '/homepage';
+        }
+    </script>
+</body>
+
+</html>

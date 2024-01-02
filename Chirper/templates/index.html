@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>UB Programmers Team Project</title>
+    <script src="static/functions.js"></script>
+    <script>
+        function toggleAnswerMethod() {
+            var answerMethod = document.getElementById('answer_method').value;
+            var openEndedDiv = document.getElementById('open_ended_answer');
+            var multipleChoiceDiv = document.getElementById('multiple_choice_answer');
+            if (answerMethod === 'Open Ended') {
+                openEndedDiv.style.display = 'block';
+                multipleChoiceDiv.style.display = 'none';
+            } else if (answerMethod === 'Multiple Choice') {
+                multipleChoiceDiv.style.display = 'block';
+                openEndedDiv.style.display = 'none';
+            } else {
+                openEndedDiv.style.display = 'none';
+                multipleChoiceDiv.style.display = 'none';
+            }
+        }
+        window.onload = function() {
+            welcome();
+            toggleAnswerMethod();
+        };
+    </script>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <div class="container">
+    
+        <div id="email"></div>
+        <div id="verification"></div>
+
+        <form action="/logout" method="POST">
+            <button type="submit" class="logout-button">Logout</button>
+        </form>        
+
+        <div style="position: absolute; top: 0; right: 0; padding: 10px; z-index: 100;">
+            <div 
+                id="postSubmissionContainer" style="margin-bottom: 20px;"> 
+            </div>
+        </div>
+
+    <div class="Posts">
+        <div id="postSubmissionContainer" style="position: absolute; top: 60%; right: 0; transform: translateY(-50%); padding: 70px;">
+            <form id="postSubmission" class="post-form" enctype="multipart/form-data">
+                <h2>Submit the Question!</h2>
+                <input type="text" name="title" placeholder="Title" id = "title" required>
+                <br> <br>
+                <textarea id="description" name="description" placeholder="Description" cols="50" rows="4" required></textarea>
+                <br>
+                <label for="image">Upload Image (optional):</label>
+                <input type="file" name="image" id="image">
+                <br>
+                <label for="answer_method">Answer Method:</label>
+                <select name="answer_method" id="answer_method" required onchange="toggleAnswerMethod()">
+                    <option value="Open Ended" selected>Open Ended</option>
+                    <option value="Multiple Choice">Multiple Choice</option>
+                </select>
+                <div id="open_ended_answer" style="display: none;">
+                    <label for="open_answer">Answer:</label>
+                    <input type="text" name="open_answer" id="open_answer">
+                </div>
+                <div id="multiple_choice_answer" style="display: none;">
+                    <!-- Multiple choice options go here -->
+                    <input type="radio" name="choice" value="A">A<br>
+                    <input type="radio" name="choice" value="B">B<br>
+                    <input type="radio" name="choice" value="C">C<br>
+                    <input type="radio" name="choice" value="D">D<br>
+                </div>
+                <br> <br>
+                <button id="submit-btn" type="button">Post</button>
+            </form>
+        </div>
+
+        <h3>Posts</h3>
+        <div id="postHistory"></div>  
+    </div>
+</div>
+
+<script>
+    function get_email() {
+        fetch('/get-email')  
+            .then(response => response.json())
+            .then(data => {
+                if (data.email) {
+                    document.getElementById('email').innerHTML = `<span class="user-status">Logged in as: ${data.email}</span>`;
+                    const verificationStatus = data.verified ? 'Verified' : 'Not Verified';
+                    document.getElementById('verification').innerHTML = `<span class="ver-status">Verification Status: ${verificationStatus}</span>`;
+                } else {
+                    document.getElementById('email').innerHTML = '<span class="user-status">Not logged in</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }    
+    get_email();
+</script>
+
+    <div class="grade-button-container">
+        <!-- Button to view personal scores -->
+        <button id="viewMyScores" type="button">View My Scores</button>
+        <!-- Button to view scores of their questions -->
+        <button id="viewQuestionScores" type="button" >View Gradebook of My Questions</button>
+        <script>
+            document.getElementById('viewMyScores').addEventListener('click', function () {
+            window.location.href = '/my-scores';
+            });
+            document.getElementById('viewQuestionScores').addEventListener('click', function () {
+            window.location.href = '/my-questions';
+            });
+        </script>
+    </div>
+
+<!------------------------------------------- WEBSOCKET -------------------------------------------->
+
+    <script>
+        const socket = io();
+
+        function escapeHtml(txt) {
+        return String(txt)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        }
+
+        socket.on('connect', function(){
+            socket.emit('connected');
+        });
+
+        socket.on('questionSubmission',function(post_data){
+            post_data = JSON.parse(post_data);
+            addPostToPosts(post_data);
+            updatePosts();
+        });
+
+        socket.on('updateHTML',function(){
+            updatePosts();
+        });
+
+        socket.on('timeUpdateForClient',(data)=>{
+            timerData = JSON.parse(data);
+            postID = timerData.postID;
+            timeLeft = timerData.timeLeft;
+            updateTimer(postID, timeLeft);
+        });
+
+        socket.on('timeIsUp', function(data) {
+            postID = data.postID;
+            updateTimer(postID, "0");
+            //Clear Input Field
+            var questionTypeDiv = document.getElementById('question_type_' + postID);
+            var questionType = questionTypeDiv.textContent.trim();
+            if (questionType === "Open Ended") {
+                const openAnswerInput = document.getElementById('open_answer_' + postID);
+                if (openAnswerInput) {
+                    openAnswerInput.remove();
+                }
+            } 
+            else {
+                const multipleChoiceContainer = document.querySelector('.multiple-choice-container-' + postID);
+                if (multipleChoiceContainer) {
+                    multipleChoiceContainer.remove();
+                }
+            }
+            const submitButton = document.querySelector('#post_' + postID + ' button');
+            if (submitButton) {
+                submitButton.remove();
+            }
+            socket.emit('gradeQuestion', postID);
+        }); 
+
+        let question_submission = document.getElementById("submit-btn");
+        question_submission.addEventListener("click", function() {
+            var emailElement = document.getElementById("email");
+            var emailContent = emailElement ? emailElement.textContent.trim() : '';
+            var email = emailContent.split(': ')[1]; // Splits the string by ": " and takes the second part
+            console.log("user who submit question is ", email);
+            let title = document.getElementById("title").value;
+            let description = document.getElementById("description").value;
+            let imageInput = document.getElementById("image");
+            let image = imageInput.files[0];
+            let questionType = document.getElementById("answer_method").value;
+            let answer;
+            if (questionType === "Open Ended") {
+                answer = document.getElementById("open_answer").value;
+            }
+            else {
+                let checkedOption = document.querySelector('input[name="choice"]:checked');
+                answer = checkedOption ? checkedOption.value : '';
+            }
+            let id = generateString(10);
+            
+            title = escapeHtml(title);
+            description = escapeHtml(description);
+            answer = escapeHtml(answer);
+
+            let formData = new FormData();
+            formData.append("image", image);
+            if (email !== "Guest") {
+            fetch('/save-image-websocket', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                socket.emit("questionSubmission", JSON.stringify({
+                    "email": email,
+                    "title": title,
+                    "description": description,
+                    "image_path": data.image_path,
+                    "question_type": questionType,
+                    "answer": answer,
+                    "_id": data.postID,
+                    "answered": []
+                }));
+            })
+            .catch(error => console.error('Error:', error));
+            }
+            else {
+                console.log('Not Logged In!');
+            }
+            //Clear input fields after submission
+            document.getElementById("title").value = ''; 
+            document.getElementById("description").value = '';
+            document.getElementById("image").value = '';
+            if (questionType == "Open Ended") {
+                document.getElementById("open_answer").value = '';
+            }
+            else {
+                let radioButtons = document.querySelectorAll('input[name="choice"]');
+                radioButtons.forEach(function(radio) {
+                radio.checked = false;
+                });
+            }
+        });
+
+        async function submitAnswer(postID) {
+            try {
+                const response = await fetch(`/check?postID=${postID}`);
+                const data = await response.json();
+            
+                Owner = data.owner;
+                console.log("252 Owner", Owner)
+                TimeUp = data.timeUp;
+                Answered = data.answered;
+                QuestionType = data.question_type;
+
+                if (Owner) {
+                    alert("You cannot submit answers for your questions.");
+                    document.getElementById('open_answer_' + postID).remove();
+                    return;
+                }
+                if (TimeUp) {
+                    alert("Time is up! You can't submit answers anymore.");
+                    return;
+                }
+                if (Answered) {
+                    alert("You have already submitted your answer.");
+                    return;
+                }
+                var email = document.getElementById("email").innerHTML;
+                email = email.split(':')[1].split('</span>')[0];
+                var questionTypeDiv = document.getElementById('question_type_' + postID);
+                var questionType = questionTypeDiv.textContent.trim();
+                let answer;
+                if (questionType === "Open Ended") {
+                    answer = document.getElementById('open_answer_' + postID).value;
+                    document.getElementById('open_answer_' + postID).remove();
+                }
+                else {
+                    var selectedChoice = document.querySelector(`input[name="choice_${postID}"]:checked`);
+                    answer = selectedChoice ? selectedChoice.value : null;
+                    const choiceInputs = document.querySelectorAll('input[name="choice_' + postID + '"]');
+                    choiceInputs.forEach(input => {
+                        input.parentElement.remove();
+                    });
+                }
+                answer = escapeHtml(answer);
+                const submitButton = document.querySelector('#post_' + postID + ' button');
+                if (submitButton) {
+                    submitButton.remove();
+                }
+                let dict = JSON.stringify({'email' : email,'postID' : postID, 'question_type': QuestionType, 'user_answer' : answer});
+                socket.emit('submitAnswer', dict);
+            } 
+            catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

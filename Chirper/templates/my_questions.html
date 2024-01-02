@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Gradebook of My Questions</title>
+</head>
+
+
+<body>
+    <h1>Gradebook of My Questions</h1>
+    <button onclick="home()">Back to home</button>
+    <ul>
+        {% for id, data in grades_list.items() %}
+        <div>
+            <h2>Title: {{ data['questions'][0]['title']}}</h2>
+            <p>Description: {{ data['questions'][0]['description'] }}</p>
+
+            <p>Correctly answered by {{ data['correct_count'] }}/{{ data['attempted_count'] }}</p>
+
+            <ul>
+                {% for question in data['questions'] %}
+                <li>
+                    <strong>User:</strong> {{ question['username'] }}<br>
+                    <strong>User Answer:</strong> {{ question['user_answer'] }}<br>
+                    <strong>Expected Answer:</strong> {{ question['expected_answer'] }}<br>
+                    <strong>Score:</strong> {{ question['score'] }}/1<br>
+                    <hr>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </ul>
+
+    <script>
+        function home() {
+            window.location.href = '/homepage';
+        }
+    </script>
+</body>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 50px;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            margin: auto;
+            width: 300px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="email"], input[type="password"] {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .back-button {
+            margin-top: 20px;
+            display: block;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-button:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+            // Hide flash messages after 5 seconds
+            setTimeout(() => {
+                const flashMessages = document.querySelectorAll('.flash-message');
+                flashMessages.forEach(fm => fm.style.display = 'none');
+            }, 5000);  // 5000 milliseconds = 5 seconds
+        });
+    </script>
+
+    <div class="register-form-container">
+        <h1>User Registration</h1>
+        <form id="registrationForm" action="/register" method="POST">
+            <input type="email" id="email" name="email" placeholder="Enter email" required><br>
+            <input type="password" id="password" name="password" placeholder="Enter password" required><br>
+            <button type="submit">Register</button>
+        </form>
+        <a href="/" class="back-button">Back to Home</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          document.getElementById('email').oninvalid = function(event) {
+            event.target.setCustomValidity('Please enter a valid email');
+          };
+        });
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html>
