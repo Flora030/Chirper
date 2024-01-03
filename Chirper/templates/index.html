@@ -68,11 +68,10 @@
                     <input type="text" name="open_answer" id="open_answer">
                 </div>
                 <div id="multiple_choice_answer" style="display: none;">
-                    <!-- Multiple choice options go here -->
-                    <input type="radio" name="choice" value="A">A<br>
-                    <input type="radio" name="choice" value="B">B<br>
-                    <input type="radio" name="choice" value="C">C<br>
-                    <input type="radio" name="choice" value="D">D<br>
+                    <label class="choice-label"><input type="radio" name="choice" value="A" class="choice-radio">A</label><br>
+                    <label class="choice-label"><input type="radio" name="choice" value="B" class="choice-radio">B</label><br>
+                    <label class="choice-label"><input type="radio" name="choice" value="C" class="choice-radio">C</label><br>
+                    <label class="choice-label"><input type="radio" name="choice" value="D" class="choice-radio">D</label><br>
                 </div>
                 <br> <br>
                 <button id="submit-btn" type="button">Post</button>
@@ -85,8 +84,8 @@
 </div>
 
 <script>
-    function get_email() {
-        fetch('/get-email')  
+    function getUsername() {
+        fetch('/get-username')  
             .then(response => response.json())
             .then(data => {
                 if (data.email) {
@@ -101,7 +100,7 @@
                 console.error('Error:', error);
             });
     }    
-    get_email();
+    getUsername();
 </script>
 
     <div class="grade-button-container">
@@ -257,7 +256,17 @@
 
                 if (Owner) {
                     alert("You cannot submit answers for your questions.");
-                    document.getElementById('open_answer_' + postID).remove();
+                    const openAnswerInput = document.getElementById('open_answer_' + postID);
+                    if (openAnswerInput) {
+                        openAnswerInput.value = '';
+                    }
+                    const multipleChoiceInput = document.getElementById('choice_' + postID);                   
+                    if (multipleChoiceInput) {
+                        let radioButtons = document.querySelectorAll('input[name="choice"]');
+                        radioButtons.forEach(function(radio) {
+                            radio.checked = false;
+                        });
+                    }
                     return;
                 }
                 if (TimeUp) {
@@ -275,10 +284,12 @@
                 let answer;
                 if (questionType === "Open Ended") {
                     answer = document.getElementById('open_answer_' + postID).value;
+                    console.log("document",document);
                     document.getElementById('open_answer_' + postID).remove();
                 }
                 else {
                     var selectedChoice = document.querySelector(`input[name="choice_${postID}"]:checked`);
+                    console.log("selectedChoice", selectedChoice);
                     answer = selectedChoice ? selectedChoice.value : null;
                     const choiceInputs = document.querySelectorAll('input[name="choice_' + postID + '"]');
                     choiceInputs.forEach(input => {

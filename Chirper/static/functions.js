@@ -43,7 +43,7 @@ function postHTML(postJSON) {
     timerDiv.id = 'timer_' + postJSON._id;
     timerDiv.className = 'timer';
     const timeLeftValue = isNaN(postJSON.timeLeft) ? 20 : postJSON.timeLeft;
-    // Update the textContent of timerDiv
+    //Update the textContent of timerDiv
     timerDiv.textContent = `Time left: ${timeLeftValue === 0 ? "Time Is Up" : timeLeftValue + " seconds"}`;
     postDiv.appendChild(timerDiv);
 
@@ -76,6 +76,7 @@ function postHTML(postJSON) {
                 choiceInput.type = 'radio';
                 choiceInput.name = 'choice_' + postJSON._id;
                 choiceInput.value = choice;
+                choiceInput.style.marginRight = '10px'; // Adds right margin to the radio button
                 choiceLabel.appendChild(choiceInput);
                 choiceLabel.appendChild(document.createTextNode(choice));
                 postDiv.appendChild(choiceLabel);
@@ -85,6 +86,7 @@ function postHTML(postJSON) {
         //Create and append the submit button
         const submitButton = document.createElement('button');
         submitButton.textContent = 'Submit Answer';
+        submitButton.style.marginTop = '10px'; 
         submitButton.onclick = function() { submitAnswer(postJSON._id); };
         postDiv.appendChild(submitButton);
     }

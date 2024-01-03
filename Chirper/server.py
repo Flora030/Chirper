@@ -83,7 +83,7 @@ def homepage():
                 break
     if doc:
         return render_template('index.html')
-    flash('Register or login first')
+    flash('Register or login first!')
     return redirect("/")
 
 @app.route('/register')
@@ -112,26 +112,6 @@ def style():
     response.mimetype = "text/css"
     return response
 
-@app.route('/get-email')
-#Displays email
-def get_email():
-    token = request.cookies.get('auth_token')
-    doc = None
-    for userInfo in auth_tokens.find({}):
-        if token:
-            if bcrypt.checkpw(token.encode('utf-8'),userInfo['token']):
-                doc = userInfo
-        else:
-            current_email = None
-    if doc:
-        current_email = doc['email']
-        email = user_db.find_one({'email': current_email})
-        verified = False
-        if email['verified']:
-            verified = True
-        return jsonify({'email': doc['email'], 'verified': verified})
-    return jsonify({'email': None})
-
 @app.route('/register', methods=['POST'])
 def register():
     if request.method == 'POST':
@@ -142,7 +122,7 @@ def register():
         existing_email = user_db.find_one({'email': email})
         #Notify if the email is already taken
         if existing_email:
-            flash("Email already used")
+            flash("Email already used!")
             response = make_response(render_template('register.html'))
             return response
         else:
@@ -156,7 +136,7 @@ def register():
             confirm_email_url = url_for('confirm_email', token=token, _external=True)
             message.body = 'Your link is {}'.format(confirm_email_url)
             mail.send(message)
-            flash("Successfully register")
+            flash("Successfully register!")
             return redirect("/")
 
 def confirm_token(token):
@@ -176,13 +156,13 @@ def confirm_email(token):
             verify = document.get("verified")
             if verify == False:
                 user_db.update_one({'email': email}, { '$set': {'verified': True}})
-                flash("Email successfully verified")
+                flash("Email successfully verified!")
                 return redirect("/")
             elif verify == True:
-                flash("Email is already verified")
+                flash("Email is already verified!")
                 return redirect("/")
         else:
-            flash("Email not found")
+            flash("Email not found!")
             return redirect("/")
         
 @app.route('/login', methods=['POST'])
@@ -194,6 +174,9 @@ def login():
         if user_data:
             hashed_password = bcrypt.checkpw(password.encode('utf-8'), user_data['password'])
             if hashed_password:
+                if user_data['verified'] == False:
+                    flash("Verify your email!")
+                    return redirect("/")
                 token = secrets.token_hex(32).encode('utf-8')
                 hashed_token = bcrypt.hashpw(token, bcrypt.gensalt())
                 if auth_tokens.find_one({'email' : email}) == None:
@@ -204,15 +187,35 @@ def login():
                 response.set_cookie("auth_token", token, max_age=3600, httponly=True)
                 return response
             else:
-                flash("Wrong Credentials")
+                flash("Wrong Credentials!")
                 response = make_response(render_template('login.html'))
                 return response
         else:
-            flash("Wrong Credentials")
+            flash("Email not found. Please register!")
             response = make_response(render_template('login.html'))
             return response
     except Exception:
         return response, 400
+
+@app.route('/get-username')
+#Displays username
+def getUsername():
+    token = request.cookies.get('auth_token')
+    doc = None
+    for userInfo in auth_tokens.find({}):
+        if token:
+            if bcrypt.checkpw(token.encode('utf-8'),userInfo['token']):
+                doc = userInfo
+        else:
+            current_email = None
+    if doc:
+        current_email = doc['email']
+        user = user_db.find_one({'email': current_email})
+        verified = False
+        if user['verified']:
+            verified = True
+        return jsonify({'email': doc['email'], 'verified': verified})
+    return jsonify({'email': None})
 
 @app.route('/forgot-password', methods=['GET'])
 def forgot_password():
@@ -236,7 +239,7 @@ def reset_password(token):
     try:
         decrypt_email = serializer.loads(token, salt='reset-password', max_age=3600)
     except:
-        flash('The password reset link is invalid or has expired')
+        flash('The password reset link is invalid or has expired!')
         return redirect(url_for('forgot_password'))
     if request.method == 'POST':
         #Set new password
@@ -245,10 +248,10 @@ def reset_password(token):
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), salt)
         result = user_db.update_one({'email': decrypt_email}, {'$set': {'password': hashed_password}})
         if result.matched_count:
-            flash('Your password has been updated')
+            flash('Your password has been updated.')
             return redirect(url_for('login'))
         else:
-            flash('Email not found')
+            flash('Email not found!')
             return redirect(url_for('forgot_password'))
     return render_template('resetPassword.html', token=token)
         

@@ -49,7 +49,6 @@ input[type="file"] {
     background-color: #fff;
 }
 
-
 #open_ended_answer {
     display: flex;
     flex-direction: column;
@@ -81,6 +80,10 @@ select {
     border-radius: 5px; 
     box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     word-wrap: break-word;
+}
+
+.multiple-choice-container:empty {
+    display: none;
 }
 
 .post, .user-list {
@@ -153,6 +156,11 @@ button:hover {
 
 .logout-button:hover {
     opacity: 0.9;
+}
+
+.choice-radio {
+    margin-top: 10px;
+    margin-right: 5px; /* Adjust the value as needed */
 }
 
 /* Clearfix for floated elements */
